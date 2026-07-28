@@ -80,4 +80,37 @@ export async function getProduct(id: string): Promise<Product> {
   return data.data.product;
 }
 
+export async function addToCart(
+  productId: string,
+  quantity = 1,
+): Promise<void> {
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("cheval_token") : null;
+
+  if (!token) {
+    throw new ApiError("Please sign in to add items to your cart.", 401);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/v1/cart`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ productId, quantity }),
+    cache: "no-store",
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message =
+      data?.message ||
+      (response.status === 401
+        ? "Please sign in to add items to your cart."
+        : `Request failed with status ${response.status}`);
+    throw new ApiError(message, response.status);
+  }
+}
+
 export { ApiError, API_BASE_URL };

@@ -9,7 +9,7 @@ type ProductCardProps = {
 export default function ProductCard({ product }: ProductCardProps) {
   return (
     <Link
-      href={`/product?id=${product._id}`}
+      href={`/product/${product._id}`}
       className="group block cursor-pointer text-foreground"
     >
       <div className="overflow-hidden bg-surface">
