@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const navLinks = [
   { href: "/", label: "HOME" },
@@ -19,6 +19,45 @@ type HeaderProps = {
 export default function Header({ cartCount = 0 }: HeaderProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [logoutMessage, setLogoutMessage] = useState("");
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!profileOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target as Node)
+      ) {
+        setProfileOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [profileOpen]);
+
+  const handleLogout = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("cheval_token");
+    }
+    setProfileOpen(false);
+    setLogoutMessage("Signed out.");
+    window.setTimeout(() => setLogoutMessage(""), 2500);
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background">
@@ -66,14 +105,58 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
             />
           </button>
 
-          <Link href="/" aria-label="Account">
-            <Image
-              src="/frontend_assets/profile_icon.png"
-              alt=""
-              width={20}
-              height={20}
-            />
-          </Link>
+          <div className="relative" ref={profileRef}>
+            <button
+              type="button"
+              aria-label="Account menu"
+              aria-expanded={profileOpen}
+              aria-haspopup="menu"
+              className="cursor-pointer"
+              onClick={() => setProfileOpen((open) => !open)}
+            >
+              <Image
+                src="/frontend_assets/profile_icon.png"
+                alt=""
+                width={20}
+                height={20}
+              />
+            </button>
+
+            {profileOpen ? (
+              <div
+                role="menu"
+                className="absolute right-0 z-50 mt-3 w-[180px] border border-border bg-background px-4 py-3 shadow-md"
+              >
+                <a
+                  href="#"
+                  role="menuitem"
+                  className="block py-1.5 text-sm text-[#5b5b5b] hover:text-foreground"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setProfileOpen(false);
+                  }}
+                >
+                  My Profile
+                </a>
+                <Link
+                  href="/orders"
+                  role="menuitem"
+                  className="block py-1.5 text-sm text-[#5b5b5b] hover:text-foreground"
+                  onClick={() => setProfileOpen(false)}
+                >
+                  Orders
+                </Link>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="block w-full py-1.5 text-left text-sm text-[#5b5b5b] hover:text-foreground"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </div>
+            ) : null}
+          </div>
 
           <Link href="/cart" aria-label="Cart" className="relative">
             <Image
@@ -102,6 +185,12 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
           </button>
         </div>
       </div>
+
+      {logoutMessage ? (
+        <p className="pb-2 text-center text-xs text-muted" role="status">
+          {logoutMessage}
+        </p>
+      ) : null}
 
       <div
         className={`fixed inset-0 z-50 bg-background transition-transform duration-300 md:hidden ${
@@ -140,6 +229,13 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
               {link.label}
             </Link>
           ))}
+          <Link
+            href="/orders"
+            className="text-sm tracking-widest"
+            onClick={() => setMenuOpen(false)}
+          >
+            ORDERS
+          </Link>
         </nav>
       </div>
     </header>
